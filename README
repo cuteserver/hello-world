@@ -1,0 +1,129 @@
+ This repository shows how Cute server (https://cuteserver.io) CMake assets can be used to build a simple project.
+ The project contains a simple Qt-based app and two dependencies in the form of a shared and static libraries.
+ Cute server CMake assets streamline building Qt-based apps/libs for the Desktop, iOS, Android, and WebAssembly.
+
+ The following assets are supported:
+
+     macOS:
+         app bundle
+         executable
+         shared library
+         shared framework
+         static library
+         static framework
+
+     iOS:
+         app bundle
+         executable
+         shared library
+         shared framework
+         static library
+         static framework
+
+     Unix | Windows:
+         executable
+         shared library
+         static library
+
+     Android:
+         app (shared library published as an app bundle containing all Android ABIs)
+         shared library
+         static library
+
+    WebAssembly
+         apps deployed as a WebAssembly-based website
+
+ This file adds functions to define targets. To add an executable, use cute_add_executable,
+ instead of add_executable and cute_add_library instead of add_library.
+
+ iOS, Android and WebAssembly require the Cute.toolchain.cmake toolchain file to be set.
+ When targeting host (Linux, macOS, Windows), no toolchain file is required.
+
+ When cross-compiling and thus requiring the toolchain file to be set, the following
+ variables are required according to the targets:
+
+ Apple iOS
+ ---------
+ When targeting iOS, the following CMake variables must be defined to configure the toolchain:
+ APPLE_IOS_TARGET: should be set to True.
+ APPLE_IOS_DEVICE: should be set to True when targeting devices. Incompatible with APPLE_IOS_SIMULATOR.
+ APPLE_IOS_SIMULATOR: should be set to True when targeting simulator. Incompatible with APPLE_IOS_DEVICE.
+ MIN_IOS_SDK_TARGET: minimum supported deployment target. If not defined, the maximum supported SDK version
+ will be used.
+ QT_HOST_PATH (Qt6 only): installation path of Qt6 targeting the host architecture.
+ QT_SDK_DIR: the location of Qt's SDK. This should be the directory that contains the bin, include, lib,... directories.
+ CMAKE_TOOLCHAIN_FILE: the file path of the Cute.toolchain.cmake file.
+
+ You do not have to worry about which plugins to include, as the toolchain includes all of them on Qt5. Qt6 specifies
+ the plugins automatically.
+ CMake uses by default a macOS-based plist that is not enough to configure an iOS app.
+ Thus, Cute toolchain uses the iOSAppInfo.plist.in file by default to configure
+ iOS applications instead of the default file used by CMake. iOSAppInfo.plist.in uses the same variables used by the default file
+ provided by CMake. These variables can be seen at: https://cmake.org/cmake/help/latest/prop_tgt/MACOSX_BUNDLE_INFO_PLIST.html.
+ MACOSX_BUNDLE_INFO_PLIST can be specified to override the plist used for iOS apps. Note that only icon sets must be specified
+ for iOS apps. Launch images are not required as Cute toolchain uses a default Launch storyboard that supports all screen
+ sizes. See the CMakeLists.txt file located at App folder for an example about how iOS apps can be easily setup using
+ the Cute toolchain.
+
+
+ Android
+ --------
+ When targeting Android, the following CMake variables must be defined to configure the toolchain:
+
+ ANDROID_TARGET: should be set to True.
+ ANDROID_SDK: the path of the installed Android SDK.
+ ANDROID_NDK: the path of the installed Android NDK.
+ ANDROID_ABIS: the abis to build for as a semicolon-separated string containing the abis (for example -DANDROID_ABIS="armeabi-v7a;arm64-v8a;x86;x86_64").
+ QT_HOST_PATH (Qt6 only): installation path of Qt6 targeting the host architecture.
+ QT_SDK_DIR: the location of Qt's Android SDK. For Qt 5.15.x this is the directory
+ containing the android folder, as, in this specific version, there is only one folder containing assets
+ for all abis. For other Qt versions, QT_SDK_DIR should indicate the directory
+ containing the android_abi folders (android_armeabi-v7a, android_arm64-v8a, android_x86, android_x86_64).
+ CMAKE_TOOLCHAIN_FILE: the file path of the Cute.toolchain.cmake file.
+
+ The variables below should be set on projects (when targeting android, the APP_BINARY_DIR
+ target property is defined. With this property, users can copy shared libraries into
+ the libs folder containing app libraries. See App's CMakeLists.txt for an example).
+
+ ANDROID_PACKAGE_SOURCE_DIR: specifies the path of a custom Android package template. See
+ https://doc.qt.io/qt-6/cmake-target-property-qt-android-package-source-dir.html for more information.
+ androiddeployqt uses the files located at QT_ANDROID_ABI_INSTALL_DIR/src/android/templates. After
+ copying files and folders from this directory, the directory pointed by ANDROID_PACKAGE_SOURCE_DIR is
+ copied over, possibly rewriting the default files. Thus, a custom AndroidManifest.xml as well as
+ resources can be structured in a folder and this variable can be used so that this folder is copied
+ before androiddeployqt builds the bundle/apk allowing specification of a custom AndroidManifest.xml,
+ as well as the inclusion of resources. In App we use this to set a custom icon, that requires
+ a custom AndroidManifest.xml as well as images as resources that should be put on the final app resources
+ folder. A splash screen is also set. This splash screen follows what is shown at:
+ https://falsinsoft.blogspot.com/2017/07/qml-show-android-native-splash-screen.html
+ KS_URL: Android keystore to use to sign bundles/apks.
+ KS_KEY_ALIAS: key alias to use to sign bundles/apks.
+ KS_PASS_FILE: specifies the file containing the password of the Android keystore to use to sign bundles/apks.
+
+ Although Android apps are built as shared libraries, the cute_add_executable function should be used
+ to generate an Android app. Modern Android apps are deployed as bundles, containing all apks in them. To,
+ generate a bundle, all desired abis must be built. Thus, CMake must be configured to build for multiple
+ distinct configurations. To accomplish this, the cute_add_executable function sets up external projects
+ to build all abis set in the ANDROID_ABIS variable. These
+ external projects are setup using CMake's ExternalProjects_Add function.
+ These external projects will be named with the _${abi} suffix. Thus, a MyApp project configured with ANDROID_ABIS
+ set to 'x86;x86_64;arm64-v8a' will have two external projects named MyApp_x86_64 and MyApp_arm64-v8a. The first abi
+ specified in ANDROID_ABIS is the MyApp target. The MyApp-all target is a custom target that has all other abi-specific
+ targets as dependencies. MyApp-all is also responsible for generating the app's bundle/apk.
+ To build a shared/static library to be used by an app, use the
+ cute_add_library function. As libraries aren't packed into apps, deployment and signing do not happen for them. Thus, for
+ libraries, the KS_* variables do not need to be specified.
+
+
+ WebAssembly
+ -----------
+ When targeting WebAssembly, the following CMake variables must be defined to configure the toolchain:
+ WASM_TARGET: should be set to True.
+ WASM_SDK: the location of Emscripten SDK. This should be the directory that contains the bin, cmake, lib,... directories.
+ QT_SDK_DIR: the location of Qt's SDK. This should be the directory that contains the bin, include, lib,... directories.
+ CMAKE_TOOLCHAIN_FILE: the file path of the Cute.toolchain.cmake file.
+
+ Desktop (Linux, Unix, Windows, macOS)
+ -------------------------------------
+ QT_SDK_DIR: the location of Qt's SDK. This variable should point
+ to the directory containing the bin, lib and include directories.

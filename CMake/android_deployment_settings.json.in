@@ -1,0 +1,28 @@
+{
+  "application-binary": "@QT_ANDROID_APPLICATION_BINARY@",
+  "architectures": {
+    @QT_ANDROID_ARCHITECTURES@
+  },
+  "extraPrefixDirs": [
+  @QT_EXTRA_PREFIX_DIRS@
+  ],
+  @QT_ANDROID_DEPLOYMENT_DEPENDENCIES@
+  @QT_ANDROID_EXTRA_PLUGINS@
+  @QT_ANDROID_VERSION_CODE@
+  @QT_ANDROID_VERSION_NAME@
+  @QT_ANDROID_EXTRA_LIBS@
+  @QT_QML_IMPORT_PATH@
+  @QT_ANDROID_PACKAGE_SOURCE_DIR@
+  @QT_QML_IMPORT_SCANNER_FILE_PATH@
+  @QT_RCC_FILE_PATH@
+  @QT_ANDROID_BUILD_TOOLS_REVISION@
+  "ndk": "@ANDROID_NDK@",
+  "ndk-host": "@ANDROID_HOST_TAG@",
+  "qml-root-path": "@CMAKE_CURRENT_SOURCE_DIR@",
+  "qt": @QT_INSTALL_DIR@,
+  "sdk": "@ANDROID_SDK@",
+  "stdcpp-path": "@ANDROID_TOOLCHAIN_ROOT@/sysroot/usr/lib/",
+  "tool-prefix": "llvm",
+  "toolchain-prefix": "llvm",
+  "useLLVM": true
+}
